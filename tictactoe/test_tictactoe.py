@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from tictactoe import initial_state, player, actions, result, winner, X, O, EMPTY
+from tictactoe import initial_state, player, actions, result, winner, terminal, X, O, EMPTY
 
 
 class Tictactoe(TestCase):
@@ -32,6 +32,25 @@ class Tictactoe(TestCase):
                  [O, EMPTY, O]]
         the_winner = winner(board)
         self.assertEqual(X, the_winner)
+        board = [[EMPTY, X, O],
+                 [X, O, X],
+                 [O, X, O]]
+        the_winner = winner(board)
+        self.assertEqual(O, the_winner)
+
+    def test_terminal(self):
+        board = [[EMPTY, EMPTY, EMPTY],
+                 [X, X, X],
+                 [O, EMPTY, O]]
+        self.assertTrue(terminal(board))
+        board = [[EMPTY, EMPTY, EMPTY],
+                 [X, EMPTY, X],
+                 [O, EMPTY, O]]
+        self.assertFalse(terminal(board))
+        board = [[X, O, X],
+                 [X, O, X],
+                 [O, X, O]]
+        self.assertTrue(terminal(board))
 
 
 if __name__ == "__main__":

@@ -33,8 +33,8 @@ def actions(board):
     Returns set of all possible actions (i, j) available on the board.
     """
     avail_actions = []
-    for row in range(0,3):
-        for col in range(0,3):
+    for row in range(0, 3):
+        for col in range(0, 3):
             if board[row][col] is EMPTY:
                 avail_actions.append((row, col))
     return avail_actions
@@ -55,13 +55,13 @@ def winner(board):
     """
     Returns the winner of the game, if there is one.
     """
-    for row in range(0,3):
+    for row in range(0, 3):
         if board[row][0] == board[row][1] == board[row][2] != EMPTY:
             return board[row][0]
-    for col in range(0,3):
+    for col in range(0, 3):
         if board[0][col] == board[1][col] == board[2][col] != EMPTY:
             return board[0][col]
-    if board[1][1] == board[2][2] == board[3][3] != EMPTY or board[0][2] == board[1][1] == board[2][0] != EMPTY:
+    if board[0][0] == board[1][1] == board[2][2] != EMPTY or board[0][2] == board[1][1] == board[2][0] != EMPTY:
         return board[1][1]
     return None
 
@@ -70,14 +70,24 @@ def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    raise NotImplementedError
+    for row in range(0, 3):
+        if board[row][0] == board[row][1] == board[row][2] != EMPTY:
+            return True
+    for col in range(0, 3):
+        if board[0][col] == board[1][col] == board[2][col] != EMPTY:
+            return True
+    if board[0][0] == board[1][1] == board[2][2] != EMPTY or board[0][2] == board[1][1] == board[2][0] != EMPTY:
+        return True
+    count_empty = sum([row.count(EMPTY) for row in board])
+    return count_empty == 0
 
 
 def utility(board):
     """
     Returns 1 if X has won the game, -1 if O has won, 0 otherwise.
     """
-    raise NotImplementedError
+    the_winner = winner(board)
+    return 1 if the_winner == X else -1 if the_winner == O else 0
 
 
 def minimax(board):
@@ -85,3 +95,16 @@ def minimax(board):
     Returns the optimal action for the current player on the board.
     """
     raise NotImplementedError
+
+
+def min_minimax(board, lower_bound = None):
+    """
+    Return point for a board as min player
+    """
+    if terminal(board)
+
+
+def max_minimax(board, upper_bound = None):
+    """
+    Return point for a board as max player
+    """

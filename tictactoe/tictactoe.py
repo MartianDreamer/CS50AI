@@ -32,11 +32,11 @@ def actions(board):
     """
     Returns set of all possible actions (i, j) available on the board.
     """
-    avail_actions = []
+    avail_actions = set()
     for row in range(0, 3):
         for col in range(0, 3):
             if board[row][col] is EMPTY:
-                avail_actions.append((row, col))
+                avail_actions.add((row, col))
     return avail_actions
 
 
@@ -94,17 +94,56 @@ def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    raise NotImplementedError
+    if terminal(board):
+        return None
+    selected_player = player(board)
+    available_actions = actions(board)
+    optimal_move = (None, None)
+    if selected_player == X:
+        for action in available_actions:
+            new_board = result(board, action)
+            value = min_minimax(new_board, optimal_move[0])
+            if optimal_move[0] is None or value > optimal_move[0]:
+                optimal_move = (value, action)
+        return optimal_move[1]
+    else:
+        for action in available_actions:
+            new_board = result(board, action)
+            value = max_minimax(new_board, optimal_move[0])
+            if optimal_move[0] is None or value < optimal_move[0]:
+                optimal_move = (value, action)
+        return optimal_move[1]
 
 
-def min_minimax(board, lower_bound = None):
+def min_minimax(board, lower_bound=None):
     """
     Return point for a board as min player
     """
-    if terminal(board)
+    if terminal(board):
+        return utility(board)
+    available_actions = actions(board)
+    current_min = 1
+    for action in available_actions:
+        new_board = result(board, action)
+        value = max_minimax(new_board)
+        if lower_bound is not None and value < lower_bound:
+            return value
+        current_min = min(current_min, value)
+    return current_min
 
 
-def max_minimax(board, upper_bound = None):
+def max_minimax(board, upper_bound=None):
     """
     Return point for a board as max player
     """
+    if terminal(board):
+        return utility(board)
+    available_actions = actions(board)
+    current_max = -1
+    for action in available_actions:
+        new_board = result(board, action)
+        value = min_minimax(new_board)
+        if upper_bound is not None and value > upper_bound:
+            return value
+        current_max = max(current_max, value)
+    return current_max

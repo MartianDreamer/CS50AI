@@ -85,15 +85,34 @@ def main():
 
 
 def shortest_path(source, target):
-    """
-    Returns the shortest list of (movie_id, person_id) pairs
-    that connect the source to the target.
+    frontier = QueueFrontier()
+    explored_person = set()
+    root = Node(source, None, None)
+    frontier.add(root)
+    explored_person.add(source)
+    while not frontier.empty():
+        extracted_node: Node = frontier.remove()
+        neighbors = neighbors_for_person(extracted_node.state)
+        if extracted_node.state == target:
+            return build_path(extracted_node)
+        for neighbor in neighbors:
+            if neighbor[1] in explored_person:
+                continue
+            explored_person.add(neighbor[1])
+            neighborNode = Node(neighbor[1], extracted_node, neighbor[0])
+            frontier.add(neighborNode)
+    return None
 
-    If no possible path, returns None.
-    """
 
-    # TODO
-    raise NotImplementedError
+def build_path(node: Node) -> list[tuple[int, int]]:
+    """
+    Build a path from this Node to source
+    """
+    rs = []
+    while node.parent is not None:
+        rs.insert(0, (node.action, node.state))
+        node = node.parent
+    return rs
 
 
 def person_id_for_name(name):

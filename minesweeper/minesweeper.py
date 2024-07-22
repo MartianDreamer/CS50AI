@@ -182,6 +182,8 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        self.moves_made.add(cell)
+
         raise NotImplementedError
 
     def make_safe_move(self):
@@ -202,4 +204,16 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        if len(self.moves_made) + len(self.mines) >= 8 * 8:
+            return None
+        new_move = None
+        while new_move is None or new_move in self.moves_made or new_move in self.mines:
+            new_move = (random.randint(0, 7), random.randint(0, 7))
+        return new_move
+
+    def __neighbor__(cell):
+        all_neighbors = [(cell[0] + 1, cell[1]), (cell[0] - 1, cell[1]), (cell[0], cell[1] + 1),
+                         (cell[0], cell[1] - 1), (cell[0] + 1,
+                                                  cell[1] + 1), (cell[0] + 1, cell[1] - 1),
+                         (cell[0] - 1, cell[1] + 1), (cell[0] - 1, cell[1] - 1)]
+        return [e for e in all_neighbors if e[0] < 8 and e[0] >= 0 and e[1] < 8 and e[1] >= 0]

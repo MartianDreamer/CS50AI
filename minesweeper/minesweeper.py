@@ -197,32 +197,12 @@ class MinesweeperAI():
         knowledge: list[Sentence] = self.knowledge
         self.moves_made.add(cell)
         self.safes.add(cell)
-        cells = self.__neighbor_cells__(cell)
-        new_sentence = Sentence(cells, count)
-        self.knowledge.append(new_sentence)
-        safe_or_mine_cells = set()
-        safe_or_mine_cells.add((True, cell))
-        while len(safe_or_mine_cells) > 0:
-            safe_or_mine = safe_or_mine_cells.pop()
-            for sentence in knowledge:
-                if safe_or_mine[0]:
-                    sentence.mark_safe(safe_or_mine[1])
-                else:
-                    sentence.mark_mine(safe_or_mine[1])
-                self.safes.update(sentence.known_safes())
-                self.mines.update(sentence.known_mines())
-                safe_or_mine_cells.update([(True, x)
-                                          for x in sentence.known_safes()])
-                safe_or_mine_cells.update([(False, x)
-                                          for x in sentence.known_mines()])
+        for sentence in knowledge:
+            sentence.mark_safe(cell)
+        new_sentence = Sentence(self.__neighbor_cells__(cell), count)
+        knowledge.append(new_sentence)
+        
 
-        inferred_sentences = []
-        for sentence_1 in knowledge:
-            for sentence_2 in knowledge:
-                if sentence_2.cells > sentence_1.cells:
-                    sentence_3 = sentence_2 - sentence_1
-                    inferred_sentences.append(sentence_3)
-        knowledge.extend(inferred_sentences)
 
     def __neighbor_cells__(self, cell):
         """

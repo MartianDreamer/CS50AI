@@ -101,12 +101,16 @@ class Sentence():
     def __str__(self):
         return f"{self.cells} = {self.count}"
 
+    def __sub__(self, other):
+        return Sentence(self.cells - other.cells, self.count - other.count)
+
     def known_mines(self):
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        if self.count == len(self.cells):
+        if len(self.cells) <= self.count:
             return self.cells
+        return set()
 
     def known_safes(self):
         """
@@ -114,23 +118,26 @@ class Sentence():
         """
         if self.count == 0:
             return self.cells
+        return set()
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        if cell in self.cells:
-            self.cells.remove(cell)
-            self.count -= 1
+        if cell not in self.cells:
+            return
+        self.cells.remove(cell)
+        self.count -= 1
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        if cell in self.cells:
-            self.cells.remove(cell)
+        if cell not in self.cells:
+            return
+        self.cells.remove(cell)
 
 
 class MinesweeperAI():
@@ -187,9 +194,58 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        knowledge: list[Sentence] = self.knowledge
         self.moves_made.add(cell)
+        self.safes.add(cell)
+        cells = self.__neighbor_cells__(cell)
+        new_sentence = Sentence(cells, count)
+        self.knowledge.append(new_sentence)
+        safe_or_mine_cells = set()
+        safe_or_mine_cells.add((True, cell))
+        while len(safe_or_mine_cells) > 0:
+            safe_or_mine = safe_or_mine_cells.pop()
+            for sentence in knowledge:
+                if safe_or_mine[0]:
+                    sentence.mark_safe(safe_or_mine[1])
+                else:
+                    sentence.mark_mine(safe_or_mine[1])
+                self.safes.update(sentence.known_safes())
+                self.mines.update(sentence.known_mines())
+                safe_or_mine_cells.update([(True, x)
+                                          for x in sentence.known_safes()])
+                safe_or_mine_cells.update([(False, x)
+                                          for x in sentence.known_mines()])
 
-        raise NotImplementedError
+        inferred_sentences = []
+        for sentence_1 in knowledge:
+            for sentence_2 in knowledge:
+                if sentence_2.cells > sentence_1.cells:
+                    sentence_3 = sentence_2 - sentence_1
+                    inferred_sentences.append(sentence_3)
+        knowledge.extend(inferred_sentences)
+
+    def __neighbor_cells__(self, cell):
+        """
+        Find neigbor available cells
+        """
+        cells = set()
+        if cell[0] - 1 >= 0 and (cell[0] - 1, cell[1]) not in self.moves_made:
+            cells.add((cell[0] - 1, cell[1]))
+        if cell[0] + 1 < 8 and (cell[0] + 1, cell[1]) not in self.moves_made:
+            cells.add((cell[0] + 1, cell[1]))
+        if cell[1] - 1 >= 0 and (cell[0], cell[1] - 1) not in self.moves_made:
+            cells.add((cell[0], cell[1] - 1))
+        if cell[1] + 1 < 8 and (cell[0], cell[1] + 1) not in self.moves_made:
+            cells.add((cell[0], cell[1] + 1))
+        if cell[0] - 1 >= 0 and cell[1] - 1 >= 0 and (cell[0] - 1, cell[1] - 1) not in self.moves_made:
+            cells.add((cell[0] - 1, cell[1] - 1))
+        if cell[0] - 1 >= 0 and cell[1] + 1 < 8 and (cell[0] - 1, cell[1] + 1) not in self.moves_made:
+            cells.add((cell[0] - 1, cell[1] + 1))
+        if cell[0] + 1 < 8 and cell[1] + 1 < 8 and (cell[0] + 1, cell[1] + 1) not in self.moves_made:
+            cells.add((cell[0] + 1, cell[1] + 1))
+        if cell[0] + 1 < 8 and cell[1] - 1 >= 0 and (cell[0] + 1, cell[1] - 1) not in self.moves_made:
+            cells.add((cell[0] + 1, cell[1] - 1))
+        return cells
 
     def make_safe_move(self):
         """
@@ -200,7 +256,10 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        for cell in self.safes:
+            if cell not in self.moves_made:
+                return cell
+        return None
 
     def make_random_move(self):
         """
@@ -209,16 +268,7 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        if len(self.moves_made) + len(self.mines) >= 8 * 8:
-            return None
-        new_move = None
-        while new_move is None or new_move in self.moves_made or new_move in self.mines:
-            new_move = (random.randint(0, 7), random.randint(0, 7))
-        return new_move
-
-    def __neighbor__(cell):
-        all_neighbors = [(cell[0] + 1, cell[1]), (cell[0] - 1, cell[1]), (cell[0], cell[1] + 1),
-                         (cell[0], cell[1] - 1), (cell[0] + 1,
-                                                  cell[1] + 1), (cell[0] + 1, cell[1] - 1),
-                         (cell[0] - 1, cell[1] + 1), (cell[0] - 1, cell[1] - 1)]
-        return [e for e in all_neighbors if e[0] < 8 and e[0] >= 0 and e[1] < 8 and e[1] >= 0]
+        move = (random.randint(0, 7), random.randint(0, 7))
+        while move in self.moves_made or move in self.mines:
+            move = random.randint(0, 7), random.randint(0, 7)
+        return move

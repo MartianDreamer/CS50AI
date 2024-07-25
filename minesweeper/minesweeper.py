@@ -1,5 +1,6 @@
 import itertools
 import random
+import copy
 
 
 class Minesweeper():
@@ -103,6 +104,12 @@ class Sentence():
 
     def __sub__(self, other):
         return Sentence(self.cells - other.cells, self.count - other.count)
+    
+    def __gt__(self, other):
+        return self.cells > other.cells and self.count > other.count
+    
+    def __lt__(self, other):
+        return self.cells < other.cells and self.count < other.count
 
     def known_mines(self):
         """
@@ -159,7 +166,7 @@ class MinesweeperAI():
         self.safes = set()
 
         # List of sentences about the game known to be true
-        self.knowledge = []
+        self.knowledge: list[Sentence] = []
 
     def mark_mine(self, cell):
         """
@@ -194,15 +201,34 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        knowledge: list[Sentence] = self.knowledge
-        self.moves_made.add(cell)
-        self.safes.add(cell)
-        for sentence in knowledge:
-            sentence.mark_safe(cell)
-        new_sentence = Sentence(self.__neighbor_cells__(cell), count)
-        knowledge.append(new_sentence)
-        
 
+        # The function should mark the cell as one of the moves made in the game.
+        self.moves_made.add(cell)
+
+        # The function should mark the cell as a safe cell, updating any sentences that contain the cell as well.
+        self.safes.add(cell)
+        for sentence in self.knowledge:
+            sentence.mark_safe(cell)
+
+        # The function should add a new sentence to the AI’s knowledge base, based on the value of cell and count, to indicate that count of the cell’s neighbors are mines. Be sure to only include cells whose state is still undetermined in the sentence.
+        new_sentence = Sentence(self.__neighbor_cells__(cell), count)
+        self.knowledge.append(new_sentence)
+
+        #If, based on any of the sentences in self.knowledge, new cells can be marked as safe or as mines, then the function should do so.
+        for s1 in self.knowledge:
+            safes = s1.known_safes().copy()
+            mines = s1.known_mines().copy()
+            for s2 in self.knowledge:
+                for safe in safes:
+                    s2.mark_safe(safe)
+                for mine in mines:
+                    s2.mark_mine(mine)
+
+        # If, based on any of the sentences in self.knowledge, new sentences can be inferred (using the subset method described in the Background), then those sentences should be added to the knowledge base as well.
+        for s1 in self.knowledge:
+            for s2 in self.knowledge:
+                if s2 > s1:
+                    self.knowledge.append(s2 - s1)
 
     def __neighbor_cells__(self, cell):
         """

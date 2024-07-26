@@ -104,10 +104,10 @@ class Sentence():
 
     def __sub__(self, other):
         return Sentence(self.cells - other.cells, self.count - other.count)
-    
+
     def __gt__(self, other):
         return self.cells > other.cells and self.count > other.count
-    
+
     def __lt__(self, other):
         return self.cells < other.cells and self.count < other.count
 
@@ -205,8 +205,10 @@ class MinesweeperAI():
         # The function should mark the cell as one of the moves made in the game.
         self.moves_made.add(cell)
 
-        # The function should mark the cell as a safe cell, updating any sentences that contain the cell as well.
+        # The function should mark the cell as a safe cell
         self.safes.add(cell)
+
+        # Updating any sentences that contain the cell as well.
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
@@ -214,44 +216,35 @@ class MinesweeperAI():
         new_sentence = Sentence(self.__neighbor_cells__(cell), count)
         self.knowledge.append(new_sentence)
 
-        #If, based on any of the sentences in self.knowledge, new cells can be marked as safe or as mines, then the function should do so.
-        for s1 in self.knowledge:
-            safes = s1.known_safes().copy()
-            mines = s1.known_mines().copy()
-            for s2 in self.knowledge:
-                for safe in safes:
-                    s2.mark_safe(safe)
-                for mine in mines:
-                    s2.mark_mine(mine)
+        self.__recursive_infer__()
 
-        # If, based on any of the sentences in self.knowledge, new sentences can be inferred (using the subset method described in the Background), then those sentences should be added to the knowledge base as well.
-        for s1 in self.knowledge:
-            for s2 in self.knowledge:
-                if s2 > s1:
-                    self.knowledge.append(s2 - s1)
-
+    def __recursive_infer__(self):
+        """
+        Infer new sentence recursively
+        """
+            
     def __neighbor_cells__(self, cell):
         """
         Find neigbor available cells
         """
-        cells = set()
-        if cell[0] - 1 >= 0 and (cell[0] - 1, cell[1]) not in self.moves_made:
-            cells.add((cell[0] - 1, cell[1]))
-        if cell[0] + 1 < 8 and (cell[0] + 1, cell[1]) not in self.moves_made:
-            cells.add((cell[0] + 1, cell[1]))
-        if cell[1] - 1 >= 0 and (cell[0], cell[1] - 1) not in self.moves_made:
-            cells.add((cell[0], cell[1] - 1))
-        if cell[1] + 1 < 8 and (cell[0], cell[1] + 1) not in self.moves_made:
-            cells.add((cell[0], cell[1] + 1))
-        if cell[0] - 1 >= 0 and cell[1] - 1 >= 0 and (cell[0] - 1, cell[1] - 1) not in self.moves_made:
-            cells.add((cell[0] - 1, cell[1] - 1))
-        if cell[0] - 1 >= 0 and cell[1] + 1 < 8 and (cell[0] - 1, cell[1] + 1) not in self.moves_made:
-            cells.add((cell[0] - 1, cell[1] + 1))
-        if cell[0] + 1 < 8 and cell[1] + 1 < 8 and (cell[0] + 1, cell[1] + 1) not in self.moves_made:
-            cells.add((cell[0] + 1, cell[1] + 1))
-        if cell[0] + 1 < 8 and cell[1] - 1 >= 0 and (cell[0] + 1, cell[1] - 1) not in self.moves_made:
-            cells.add((cell[0] + 1, cell[1] - 1))
-        return cells
+        cells = []
+        if cell[0] - 1 >= 0:
+            cells.append((cell[0] - 1, cell[1]))
+        if cell[0] + 1 < self.height:
+            cells.append((cell[0] + 1, cell[1]))
+        if cell[1] - 1 >= 0:
+            cells.append((cell[0], cell[1] - 1))
+        if cell[1] + 1 < self.width:
+            cells.append((cell[0], cell[1] + 1))
+        if cell[0] - 1 >= 0 and cell[1] - 1 >= 0:
+            cells.append((cell[0] - 1, cell[1] - 1))
+        if cell[0] - 1 >= 0 and cell[1] + 1 < self.width:
+            cells.append((cell[0] - 1, cell[1] + 1))
+        if cell[0] + 1 < self.height and cell[1] + 1 < self.width:
+            cells.append((cell[0] + 1, cell[1] + 1))
+        if cell[0] + 1 < self.height and cell[1] - 1 >= 0:
+            cells.append((cell[0] + 1, cell[1] - 1))
+        return set([cell for cell in cells if cell not in self.moves_made])
 
     def make_safe_move(self):
         """
@@ -274,7 +267,9 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        move = (random.randint(0, 7), random.randint(0, 7))
+        move = (random.randint(0, self.height - 1),
+                random.randint(0, self.width - 1))
         while move in self.moves_made or move in self.mines:
-            move = random.randint(0, 7), random.randint(0, 7)
+            move = random.randint(
+                0, self.height - 1), random.randint(0, self.width - 1)
         return move

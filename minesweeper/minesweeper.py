@@ -1,6 +1,5 @@
 import itertools
 import random
-import copy
 
 
 class Minesweeper():
@@ -111,6 +110,9 @@ class Sentence():
     def __lt__(self, other):
         return self.cells < other.cells and self.count < other.count
 
+    def is_empty(self):
+        return len(self.cells) == 0
+
     def known_mines(self):
         """
         Returns the set of all cells in self.cells known to be mines.
@@ -205,15 +207,20 @@ class MinesweeperAI():
         # The function should mark the cell as one of the moves made in the game.
         self.moves_made.add(cell)
 
-        # The function should mark the cell as a safe cell
-        self.safes.add(cell)
-
-        # Updating any sentences that contain the cell as well.
-        for sentence in self.knowledge:
-            sentence.mark_safe(cell)
+        # The function should mark the cell as a safe cell. Updating any sentences that contain the cell as well.
+        self.mark_safe(cell)
 
         # The function should add a new sentence to the AI’s knowledge base, based on the value of cell and count, to indicate that count of the cell’s neighbors are mines. Be sure to only include cells whose state is still undetermined in the sentence.
-        new_sentence = Sentence(self.__neighbor_cells__(cell), count)
+        cells = self.__neighbor_cells__(cell)
+        for s in self.safes:
+            if s in cells:
+                cells.remove(s)
+        for m in self.mines:
+            if m in cells:
+                cells.remove(m)
+                count -= 1
+
+        new_sentence = Sentence(cells, count)
         self.knowledge.append(new_sentence)
 
         self.__recursive_infer__()
@@ -222,29 +229,44 @@ class MinesweeperAI():
         """
         Infer new sentence recursively
         """
-            
+        for _ in range(0, 1000):
+            for sentence in self.knowledge:
+                safes = sentence.known_safes().copy()
+                mines = sentence.known_mines().copy()
+                for safe in safes:
+                    self.mark_safe(safe)
+                for mine in mines:
+                    self.mark_mine(mine)
+
+            for s1 in self.knowledge:
+                for s2 in self.knowledge:
+                    if s1.is_empty():
+                        break
+                    if s2 > s1:
+                        self.knowledge.append(s2 - s1)
+
     def __neighbor_cells__(self, cell):
         """
         Find neigbor available cells
         """
-        cells = []
+        cells = set()
         if cell[0] - 1 >= 0:
-            cells.append((cell[0] - 1, cell[1]))
+            cells.add((cell[0] - 1, cell[1]))
         if cell[0] + 1 < self.height:
-            cells.append((cell[0] + 1, cell[1]))
+            cells.add((cell[0] + 1, cell[1]))
         if cell[1] - 1 >= 0:
-            cells.append((cell[0], cell[1] - 1))
+            cells.add((cell[0], cell[1] - 1))
         if cell[1] + 1 < self.width:
-            cells.append((cell[0], cell[1] + 1))
+            cells.add((cell[0], cell[1] + 1))
         if cell[0] - 1 >= 0 and cell[1] - 1 >= 0:
-            cells.append((cell[0] - 1, cell[1] - 1))
+            cells.add((cell[0] - 1, cell[1] - 1))
         if cell[0] - 1 >= 0 and cell[1] + 1 < self.width:
-            cells.append((cell[0] - 1, cell[1] + 1))
-        if cell[0] + 1 < self.height and cell[1] + 1 < self.width:
-            cells.append((cell[0] + 1, cell[1] + 1))
+            cells.add((cell[0] - 1, cell[1] + 1))
         if cell[0] + 1 < self.height and cell[1] - 1 >= 0:
-            cells.append((cell[0] + 1, cell[1] - 1))
-        return set([cell for cell in cells if cell not in self.moves_made])
+            cells.add((cell[0] + 1, cell[1] - 1))
+        if cell[0] + 1 < self.height and cell[1] + 1 < self.width:
+            cells.add((cell[0] + 1, cell[1] + 1))
+        return cells
 
     def make_safe_move(self):
         """
